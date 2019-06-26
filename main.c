@@ -257,6 +257,8 @@ void parseargs(int argc, char **argv, ws2811_t *ws2811)
                 "                 If omitted, default is 18 (PWM0)\n"
                 "-i (--invert)  - invert pin output (pulse LOW)\n"
                 "-c (--clear)   - clear matrix on exit.\n"
+                "-m (--mode)    - animate chase, fade, rainbow, blink, or color\n"
+                "-r (--rate)    - update animation at N fps\n"
                 "-v (--version) - version information\n"
                 , argv[0]);
             exit(-1);
