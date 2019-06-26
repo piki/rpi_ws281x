@@ -2,6 +2,7 @@
 version.h
 *.pyc
 test
+leds
 newtest
 *.o
 *.a

@@ -34,6 +34,7 @@ static char VERSION[] = "XX.YY.ZZ";
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -65,7 +66,7 @@ static char VERSION[] = "XX.YY.ZZ";
 
 #define WIDTH                   8
 #define HEIGHT                  8
-#define LED_COUNT               (WIDTH * HEIGHT)
+#define LED_COUNT               50
 
 int width = WIDTH;
 int height = HEIGHT;
@@ -205,6 +206,8 @@ static void setup_handlers(void)
     sigaction(SIGTERM, &sa, NULL);
 }
 
+static const char *mode;
+static int fps = 30;
 
 void parseargs(int argc, char **argv, ws2811_t *ws2811)
 {
@@ -222,6 +225,8 @@ void parseargs(int argc, char **argv, ws2811_t *ws2811)
 		{"height", required_argument, 0, 'y'},
 		{"width", required_argument, 0, 'x'},
 		{"version", no_argument, 0, 'v'},
+                {"mode", required_argument, 0, 'm'},
+                {"rate", required_argument, 0, 'r'},
 		{0, 0, 0, 0}
 	};
 
@@ -229,7 +234,7 @@ void parseargs(int argc, char **argv, ws2811_t *ws2811)
 	{
 
 		index = 0;
-		c = getopt_long(argc, argv, "cd:g:his:vx:y:", longopts, &index);
+		c = getopt_long(argc, argv, "cd:g:his:vx:y:m:r:", longopts, &index);
 
 		if (c == -1)
 			break;
@@ -299,6 +304,14 @@ void parseargs(int argc, char **argv, ws2811_t *ws2811)
 				}
 			}
 			break;
+
+                case 'm':
+                        mode = optarg;
+                        break;
+
+                case 'r':
+                        fps = atoi(optarg);
+                        break;
 
 		case 'y':
 			if (optarg) {
@@ -371,6 +384,138 @@ void parseargs(int argc, char **argv, ws2811_t *ws2811)
 	}
 }
 
+#define blue    0x00010000
+#define red     0x00000100
+#define green   0x00000001
+#define cyan    (blue + green)
+#define yellow  (green + red)
+#define magenta (blue + red)
+#define white   (blue + red + green)
+#define orange  (2*red + green)
+int sparkle_colors[] = { blue, red, green, cyan, yellow, magenta, white };
+
+#define FADERAND 12
+
+void fade(int frame)
+{
+    int i;
+    int pos = frame % 0x80;
+    int color = (frame / 0x80) % ARRAY_SIZE(sparkle_colors);
+    for (i=0; i<LED_COUNT; i++) {
+        if (pos <= 0x40) {
+            ledstring.channel[0].leds[i] = sparkle_colors[color] * (pos + (rand() % FADERAND));
+        }
+        else {
+            ledstring.channel[0].leds[i] = sparkle_colors[color] * (0x80-pos + (rand() % FADERAND));
+        }
+    }
+}
+
+void chase(int frame, int mod)
+{
+    static int color[LED_COUNT+1];
+    int i;
+    if (frame % 2 == 0) {
+        for (i=LED_COUNT-1; i>=1; i--) {
+            color[i] = color[i-1];
+        }
+        if (frame % mod == 0) {
+            color[0] = sparkle_colors[rand() % ARRAY_SIZE(sparkle_colors)];
+        }
+        else {
+            color[0] = 0;
+        }
+        for (i=0; i<LED_COUNT; i++) {
+            ledstring.channel[0].leds[i] = color[i] * 0x80;
+        }
+    }
+    else {
+        for (i=1; i<LED_COUNT; i++) {
+            ledstring.channel[0].leds[i] = (color[i] + color[i-1]) * 0x20;
+        }
+    }
+}
+
+void sparkle()
+{
+    static int color[LED_COUNT];
+    static int intensity[LED_COUNT];
+    int i;
+    for (i=0; i<2; i++) {
+        int r = rand() % LED_COUNT;
+        color[r] = sparkle_colors[rand() % ARRAY_SIZE(sparkle_colors)];
+        intensity[r] = 0xFF;
+    }
+    for (i=0; i<LED_COUNT; i++) {
+        intensity[i] = intensity[i] * 0.87;
+        ledstring.channel[0].leds[i] = color[i] * intensity[i];
+    }
+}
+
+//int rainbow_colors[] = { red, yellow, green, blue, magenta, red };
+//int rainbow_colors[] = { cyan, white, blue, magenta, green, cyan };
+int rainbow_colors[] = { red, orange, yellow, magenta, white, red };
+void rainbow(int frame)
+{
+    int i;
+    for (i=0; i<LED_COUNT; i++) {
+        int mi = (i + frame/3) % LED_COUNT;
+        float rpos = mi * (float)(ARRAY_SIZE(rainbow_colors)-1) / (LED_COUNT-1);
+        int a = (int)rpos;
+        int b = a + 1;
+        float b_pct = rpos - a;
+        float a_pct = 1 - b_pct;
+        ledstring.channel[0].leds[i] =
+            rainbow_colors[a] * (int)(0x80*a_pct) +
+            rainbow_colors[b] * (int)(0x80*b_pct);
+    }
+}
+
+struct { const char *name; unsigned long color; } named_colors[] = {
+    { "red",      0x500202 },
+    { "green",    0x208010 },
+    { "blue",     0x103080 },
+    { "pink",     0x801010 },
+    { "purple",   0x400080 },
+    { "orange",   0x802000 },
+    { "yellow",   0x905000 },
+    { "teal",     0x008030 },
+    { "gold",     0x805010 },
+    { "cool",     0x505080 },
+    { "white",    0x808040 },
+};
+
+void plain_color(const char *name)
+{
+    unsigned int i;
+    unsigned long color = 0;
+    for (i=0; i<ARRAY_SIZE(named_colors); i++) {
+        if (!strcmp(name, named_colors[i].name)) {
+            color = named_colors[i].color;
+            break;
+        }
+    }
+    if (!color) color = strtoul(name, 0, 16);
+
+    color = ((color & 0x00FF0000) >> 8) +
+        ((color & 0x0000FF00) >> 8) +
+        ((color & 0x000000FF) << 16);
+
+    for (i=0; i<LED_COUNT; i++) {
+        ledstring.channel[0].leds[i] = color;
+    }
+}
+
+const char *blink_colors[] = { "red", "yellow", "green", "blue", "purple", "pink" };
+void blink(int frame)
+{
+	if (frame % 2 == 0) {
+		plain_color("0");
+	}
+	else {
+		plain_color(blink_colors[(frame/2) % ARRAY_SIZE(blink_colors)]);
+	}
+}
 
 int main(int argc, char *argv[])
 {
@@ -390,11 +535,25 @@ int main(int argc, char *argv[])
         return ret;
     }
 
+    int frame = 0;
+    srand(time(0));
+
     while (running)
     {
-        matrix_raise();
-        matrix_bottom();
-        matrix_render();
+        if (mode && !strcmp(mode, "chase"))
+            chase(frame++, 12);
+        else if (mode && !strcmp(mode, "fade"))
+            fade(frame++);
+        else if (mode && !strcmp(mode, "rainbow"))
+            rainbow(frame++);
+        else if (mode && !strcmp(mode, "blink"))
+            blink(frame++);
+        else if (mode && !strncmp(mode, "color:", 6)) {
+            plain_color(mode+6);
+            running = 0;
+        }
+        else
+            sparkle();
 
         if ((ret = ws2811_render(&ledstring)) != WS2811_SUCCESS)
         {
@@ -402,8 +561,7 @@ int main(int argc, char *argv[])
             break;
         }
 
-        // 15 frames /sec
-        usleep(1000000 / 15);
+        usleep(1000000 / fps);
     }
 
     if (clear_on_exit) {
