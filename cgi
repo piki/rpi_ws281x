@@ -12,19 +12,31 @@ rate = cgi['rate']
 color = cgi['color']
 code = cgi['code']
 
-puts "<!--"
-puts "mode=#{mode.inspect}\n"
-puts "rate=#{rate.inspect}\n"
-puts "color=#{color.inspect}\n"
-puts "code=#{code.inspect}\n"
+LITERAL_MODES = %w[auto parabolic rain fire scoot halloween lightning fireflies chase fade rainbow blink]
+OTHER_MODES = ["off", "color", "color code"]
+REGEX = Regexp.new("^" + (LITERAL_MODES+OTHER_MODES).join('|') + "$")
+
+puts %Q(<html>
+<head>
+<title>RPI WS2811 LED control</title>
+</head>
+<body>
+<meta name="viewport" content="width=device-width, initial-scale=2.2">
+
+<!--
+mode=#{mode.inspect}
+rate=#{rate.inspect}
+color=#{color.inspect}
+code=#{code.inspect}
+)
 
 # If any input, take action.
-if mode =~ /^(off|chase|fade|rainbow|blink|color|color code)$/ && rate =~ /^\d+$/ && rate.to_i >= 1 && rate.to_i <= 100
+if mode =~ REGEX && rate =~ /^\d+$/ && rate.to_i >= 1 && rate.to_i <= 100
 	args = nil
 	case mode
 		when "off"
 			args = [ "-r", rate, "-m", "color:000000" ]
-		when "chase", "fade", "rainbow", "blink"
+		when Regexp.new(LITERAL_MODES.join('|'))
 			args = [ "-r", rate, "-m", mode ]
 		when "color"
 			args = [ "-r", rate, "-m", "color:#{color}" ] if color =~ /^\w+$/
@@ -53,10 +65,11 @@ end
 puts %Q(
 -->
 <form method="post">
-<input type="submit" name="mode" value="chase"><br>
-<input type="submit" name="mode" value="fade"><br>
-<input type="submit" name="mode" value="rainbow"><br>
-<input type="submit" name="mode" value="blink"><br>
+)
+LITERAL_MODES.each do |mode|
+	puts %Q(<input type="submit" name="mode" value="#{mode}">)
+end
+puts %Q(
 <input type="submit" name="mode" value="color"><select name="color">
 )
 COLORS.each { |x| puts %Q(<option value="#{x}"#{" selected" if color == x}>#{x}) }
@@ -65,4 +78,7 @@ puts %Q(
 <input type="submit" name="mode" value="color code"><input name="code" type="text" value="#{code}" size=6><br>
 <input type="submit" name="mode" value="off"><p>
 <input type="text" name="rate" value="#{rate}" size=3> fps<br>
-</form>)
+</form>
+</body>
+</html>
+)
