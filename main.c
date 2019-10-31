@@ -66,7 +66,7 @@ static char VERSION[] = "XX.YY.ZZ";
 
 #define WIDTH                   8
 #define HEIGHT                  8
-#define LED_COUNT               50
+#define LED_COUNT               200
 
 int width = WIDTH;
 int height = HEIGHT;
@@ -191,7 +191,7 @@ void matrix_bottom(void)
 
 static void ctrl_c_handler(int signum)
 {
-    (void)(signum);
+	(void)(signum);
     running = 0;
 }
 
@@ -211,101 +211,99 @@ static int fps = 30;
 
 void parseargs(int argc, char **argv, ws2811_t *ws2811)
 {
-    int index;
-    int c;
+	int index;
+	int c;
 
-    static struct option longopts[] =
-    {
-        {"help", no_argument, 0, 'h'},
-        {"dma", required_argument, 0, 'd'},
-        {"gpio", required_argument, 0, 'g'},
-        {"invert", no_argument, 0, 'i'},
-        {"clear", no_argument, 0, 'c'},
-        {"strip", required_argument, 0, 's'},
-        {"height", required_argument, 0, 'y'},
-        {"width", required_argument, 0, 'x'},
-        {"version", no_argument, 0, 'v'},
-        {"mode", required_argument, 0, 'm'},
-        {"rate", required_argument, 0, 'r'},
-        {0, 0, 0, 0}
-    };
+	static struct option longopts[] =
+	{
+		{"help", no_argument, 0, 'h'},
+		{"dma", required_argument, 0, 'd'},
+		{"gpio", required_argument, 0, 'g'},
+		{"invert", no_argument, 0, 'i'},
+		{"clear", no_argument, 0, 'c'},
+		{"strip", required_argument, 0, 's'},
+		{"height", required_argument, 0, 'y'},
+		{"width", required_argument, 0, 'x'},
+		{"version", no_argument, 0, 'v'},
+                {"mode", required_argument, 0, 'm'},
+                {"rate", required_argument, 0, 'r'},
+		{0, 0, 0, 0}
+	};
 
-    while (1)
-    {
+	while (1)
+	{
 
-        index = 0;
-        c = getopt_long(argc, argv, "cd:g:his:vx:y:m:r:", longopts, &index);
+		index = 0;
+		c = getopt_long(argc, argv, "cd:g:his:vx:y:m:r:", longopts, &index);
 
-        if (c == -1)
-            break;
+		if (c == -1)
+			break;
 
-        switch (c)
-        {
-        case 0:
-            /* handle flag options (array's 3rd field non-0) */
-            break;
+		switch (c)
+		{
+		case 0:
+			/* handle flag options (array's 3rd field non-0) */
+			break;
 
-        case 'h':
-            fprintf(stderr, "%s version %s\n", argv[0], VERSION);
-            fprintf(stderr, "Usage: %s \n"
-                "-h (--help)    - this information\n"
-                "-s (--strip)   - strip type - rgb, grb, gbr, rgbw\n"
-                "-x (--width)   - matrix width (default 8)\n"
-                "-y (--height)  - matrix height (default 8)\n"
-                "-d (--dma)     - dma channel to use (default 10)\n"
-                "-g (--gpio)    - GPIO to use\n"
-                "                 If omitted, default is 18 (PWM0)\n"
-                "-i (--invert)  - invert pin output (pulse LOW)\n"
-                "-c (--clear)   - clear matrix on exit.\n"
-                "-m (--mode)    - animate chase, fade, rainbow, blink, or color\n"
-                "-r (--rate)    - update animation at N fps\n"
-                "-v (--version) - version information\n"
-                , argv[0]);
-            exit(-1);
+		case 'h':
+			fprintf(stderr, "%s version %s\n", argv[0], VERSION);
+			fprintf(stderr, "Usage: %s \n"
+				"-h (--help)    - this information\n"
+				"-s (--strip)   - strip type - rgb, grb, gbr, rgbw\n"
+				"-x (--width)   - matrix width (default 8)\n"
+				"-y (--height)  - matrix height (default 8)\n"
+				"-d (--dma)     - dma channel to use (default 10)\n"
+				"-g (--gpio)    - GPIO to use\n"
+				"                 If omitted, default is 18 (PWM0)\n"
+				"-i (--invert)  - invert pin output (pulse LOW)\n"
+				"-c (--clear)   - clear matrix on exit.\n"
+				"-v (--version) - version information\n"
+				, argv[0]);
+			exit(-1);
 
-        case 'D':
-            break;
+		case 'D':
+			break;
 
-        case 'g':
-            if (optarg) {
-                int gpio = atoi(optarg);
+		case 'g':
+			if (optarg) {
+				int gpio = atoi(optarg);
 /*
-    PWM0, which can be set to use GPIOs 12, 18, 40, and 52.
-    Only 12 (pin 32) and 18 (pin 12) are available on the B+/2B/3B
-    PWM1 which can be set to use GPIOs 13, 19, 41, 45 and 53.
-    Only 13 is available on the B+/2B/PiZero/3B, on pin 33
-    PCM_DOUT, which can be set to use GPIOs 21 and 31.
-    Only 21 is available on the B+/2B/PiZero/3B, on pin 40.
-    SPI0-MOSI is available on GPIOs 10 and 38.
-    Only GPIO 10 is available on all models.
+	PWM0, which can be set to use GPIOs 12, 18, 40, and 52.
+	Only 12 (pin 32) and 18 (pin 12) are available on the B+/2B/3B
+	PWM1 which can be set to use GPIOs 13, 19, 41, 45 and 53.
+	Only 13 is available on the B+/2B/PiZero/3B, on pin 33
+	PCM_DOUT, which can be set to use GPIOs 21 and 31.
+	Only 21 is available on the B+/2B/PiZero/3B, on pin 40.
+	SPI0-MOSI is available on GPIOs 10 and 38.
+	Only GPIO 10 is available on all models.
 
-    The library checks if the specified gpio is available
-    on the specific model (from model B rev 1 till 3B)
+	The library checks if the specified gpio is available
+	on the specific model (from model B rev 1 till 3B)
 
 */
-                ws2811->channel[0].gpionum = gpio;
-            }
-            break;
+				ws2811->channel[0].gpionum = gpio;
+			}
+			break;
 
-        case 'i':
-            ws2811->channel[0].invert=1;
-            break;
+		case 'i':
+			ws2811->channel[0].invert=1;
+			break;
 
-        case 'c':
-            clear_on_exit=1;
-            break;
+		case 'c':
+			clear_on_exit=1;
+			break;
 
-        case 'd':
-            if (optarg) {
-                int dma = atoi(optarg);
-                if (dma < 14) {
-                    ws2811->dmanum = dma;
-                } else {
-                    printf ("invalid dma %d\n", dma);
-                    exit (-1);
-                }
-            }
-            break;
+		case 'd':
+			if (optarg) {
+				int dma = atoi(optarg);
+				if (dma < 14) {
+					ws2811->dmanum = dma;
+				} else {
+					printf ("invalid dma %d\n", dma);
+					exit (-1);
+				}
+			}
+			break;
 
                 case 'm':
                         mode = optarg;
@@ -315,75 +313,75 @@ void parseargs(int argc, char **argv, ws2811_t *ws2811)
                         fps = atoi(optarg);
                         break;
 
-        case 'y':
-            if (optarg) {
-                height = atoi(optarg);
-                if (height > 0) {
-                    ws2811->channel[0].count = height * width;
-                } else {
-                    printf ("invalid height %d\n", height);
-                    exit (-1);
-                }
-            }
-            break;
+		case 'y':
+			if (optarg) {
+				height = atoi(optarg);
+				if (height > 0) {
+					ws2811->channel[0].count = height * width;
+				} else {
+					printf ("invalid height %d\n", height);
+					exit (-1);
+				}
+			}
+			break;
 
-        case 'x':
-            if (optarg) {
-                width = atoi(optarg);
-                if (width > 0) {
-                    ws2811->channel[0].count = height * width;
-                } else {
-                    printf ("invalid width %d\n", width);
-                    exit (-1);
-                }
-            }
-            break;
+		case 'x':
+			if (optarg) {
+				width = atoi(optarg);
+				if (width > 0) {
+					ws2811->channel[0].count = height * width;
+				} else {
+					printf ("invalid width %d\n", width);
+					exit (-1);
+				}
+			}
+			break;
 
-        case 's':
-            if (optarg) {
-                if (!strncasecmp("rgb", optarg, 4)) {
-                    ws2811->channel[0].strip_type = WS2811_STRIP_RGB;
-                }
-                else if (!strncasecmp("rbg", optarg, 4)) {
-                    ws2811->channel[0].strip_type = WS2811_STRIP_RBG;
-                }
-                else if (!strncasecmp("grb", optarg, 4)) {
-                    ws2811->channel[0].strip_type = WS2811_STRIP_GRB;
-                }
-                else if (!strncasecmp("gbr", optarg, 4)) {
-                    ws2811->channel[0].strip_type = WS2811_STRIP_GBR;
-                }
-                else if (!strncasecmp("brg", optarg, 4)) {
-                    ws2811->channel[0].strip_type = WS2811_STRIP_BRG;
-                }
-                else if (!strncasecmp("bgr", optarg, 4)) {
-                    ws2811->channel[0].strip_type = WS2811_STRIP_BGR;
-                }
-                else if (!strncasecmp("rgbw", optarg, 4)) {
-                    ws2811->channel[0].strip_type = SK6812_STRIP_RGBW;
-                }
-                else if (!strncasecmp("grbw", optarg, 4)) {
-                    ws2811->channel[0].strip_type = SK6812_STRIP_GRBW;
-                }
-                else {
-                    printf ("invalid strip %s\n", optarg);
-                    exit (-1);
-                }
-            }
-            break;
+		case 's':
+			if (optarg) {
+				if (!strncasecmp("rgb", optarg, 4)) {
+					ws2811->channel[0].strip_type = WS2811_STRIP_RGB;
+				}
+				else if (!strncasecmp("rbg", optarg, 4)) {
+					ws2811->channel[0].strip_type = WS2811_STRIP_RBG;
+				}
+				else if (!strncasecmp("grb", optarg, 4)) {
+					ws2811->channel[0].strip_type = WS2811_STRIP_GRB;
+				}
+				else if (!strncasecmp("gbr", optarg, 4)) {
+					ws2811->channel[0].strip_type = WS2811_STRIP_GBR;
+				}
+				else if (!strncasecmp("brg", optarg, 4)) {
+					ws2811->channel[0].strip_type = WS2811_STRIP_BRG;
+				}
+				else if (!strncasecmp("bgr", optarg, 4)) {
+					ws2811->channel[0].strip_type = WS2811_STRIP_BGR;
+				}
+				else if (!strncasecmp("rgbw", optarg, 4)) {
+					ws2811->channel[0].strip_type = SK6812_STRIP_RGBW;
+				}
+				else if (!strncasecmp("grbw", optarg, 4)) {
+					ws2811->channel[0].strip_type = SK6812_STRIP_GRBW;
+				}
+				else {
+					printf ("invalid strip %s\n", optarg);
+					exit (-1);
+				}
+			}
+			break;
 
-        case 'v':
-            fprintf(stderr, "%s version %s\n", argv[0], VERSION);
-            exit(-1);
+		case 'v':
+			fprintf(stderr, "%s version %s\n", argv[0], VERSION);
+			exit(-1);
 
-        case '?':
-            /* getopt_long already reported error? */
-            exit(-1);
+		case '?':
+			/* getopt_long already reported error? */
+			exit(-1);
 
-        default:
-            exit(-1);
-        }
-    }
+		default:
+			exit(-1);
+		}
+	}
 }
 
 #define blue    0x00010000
@@ -473,6 +471,39 @@ void rainbow(int frame)
     }
 }
 
+unsigned int scale(unsigned int color, unsigned int pct)
+{
+    return (((color & 0xff0000) * pct / 100) & 0xff0000) +
+           (((color & 0x00ff00) * pct / 100) & 0x00ff00) +
+           (((color & 0x0000ff) * pct / 100) & 0x0000ff);
+}
+
+unsigned int mix(unsigned int color1, unsigned int color2, unsigned int pct)
+{
+    return scale(color1, 100-pct) + scale(color2, pct);
+}
+
+void halloween(int frame)
+{
+    int i;
+    for (i=0; i<LED_COUNT; i++) {
+        int mframe = (LED_COUNT + frame - i) % 64;
+        int color = (mframe < 32) ? 0xff8000 : 0x00ff40;
+        ledstring.channel[0].leds[i] = scale(color, (32-mframe%32)*100/32);
+    }
+}
+
+void pure_random(int frame)
+{
+    int i;
+    for (i=0; i<LED_COUNT; i++) {
+        ledstring.channel[0].leds[i] =
+           red * (rand() % 20) + 
+           green * (rand() % 20) + 
+           blue * (rand() % 20);
+    }
+}
+
 struct { const char *name; unsigned long color; } named_colors[] = {
     { "red",      0x500202 },
     { "green",    0x208010 },
@@ -486,6 +517,13 @@ struct { const char *name; unsigned long color; } named_colors[] = {
     { "cool",     0x505080 },
     { "white",    0x808040 },
 };
+
+void blank()
+{
+    int i;
+    for (i=0; i<LED_COUNT; i++)
+        ledstring.channel[0].leds[i] = 0;
+}
 
 void plain_color(const char *name)
 {
@@ -508,15 +546,146 @@ void plain_color(const char *name)
     }
 }
 
+void lightning_helper(int frame, int colors)
+{
+    #define BOLT_COUNT 40
+    static struct { int pos, age; unsigned int color; } bolts[BOLT_COUNT];
+    // (1..20).map{|x| 12700/(x**1.5)}.map(&:to_i)
+    static int decay_table[] = { 12700, 2444, 1135, 12700, 4490, 2444, 1587, 1135, 864, 685, 561, 470, 401, 348, 305, 270, 242, 218, 198, 181, 166, 153, 141 };
+    static int color_table[] = { orange, magenta, red };
+    static int next_bolt = 0;
+    int i;
+
+    blank();
+
+    if (rand() % 8 == 0) {
+        bolts[next_bolt].pos = rand() % LED_COUNT;
+        bolts[next_bolt].age = 1;
+        bolts[next_bolt].color = colors ? color_table[(rand() % ARRAY_SIZE(color_table))] : white;
+        next_bolt = (next_bolt + 1) % BOLT_COUNT;
+    }
+
+    for (i=0; i<BOLT_COUNT; i++) {
+        if (bolts[i].age >= 23) bolts[i].pos = -1;
+        if (bolts[i].pos == -1 || bolts[i].age == 0) continue;
+        ledstring.channel[0].leds[bolts[i].pos] = scale(bolts[i].color, decay_table[bolts[i].age-1]);
+        bolts[i].age++;
+    }
+}
+
+void lightning(int frame) { lightning_helper(frame, 0); }
+void fireflies(int frame) { lightning_helper(frame, 1); }
+
+#define SCOOT_COUNT 10
+void scoot(int frame)
+{
+    static int bolts[SCOOT_COUNT];
+    static int next_bolt = 0;
+    int i;
+
+    blank();
+
+    if (rand() % 25 == 0) {
+        bolts[next_bolt] = (next_bolt % 2) ? 3 : (LED_COUNT-3);
+        next_bolt = (next_bolt + 1) % SCOOT_COUNT;
+    }
+
+    for (i=0; i<SCOOT_COUNT; i++) {
+        if (bolts[i] < 0 || bolts[i] >= LED_COUNT) continue;
+        int color = (i % 2) ? 0xff8000 : 0x00ff40;
+        ledstring.channel[0].leds[bolts[i]] = color;
+        int delta = 1;//(rand() % 5) - 1;
+        if (i % 2 == 0) delta = -delta;
+        bolts[i] += delta;
+    }
+}
+
+static struct { int pos, delta, len; } edge[] = {
+    { 4, 1, 25 },
+    { 61, -1, 23 },
+    { 105, 1, 25 },
+    { 164, -1, 24 }
+};
+
+static struct { int pos, delta, len; } arc[] = {
+    { 4, 1, 58 },
+    { 164, -1, 60 }
+};
+
+void fire(int frame)
+{
+    int i, j;
+    static int frac = 80;
+    blank();
+    for (i=0; i<ARRAY_SIZE(edge); i++) {
+        int limit = edge[i].len * frac / 100;
+        frac += (rand() % 21) - 5 - frac/10;
+        if (frac < 0) frac = 0;
+        if (frac > 100) frac = 100;
+        for (j=0; j<limit; j++) {
+            int pos = edge[i].pos + j*edge[i].delta;
+            int color = mix(25*red, 25*orange, 100*j/limit);
+            ledstring.channel[0].leds[pos] = color;
+        }
+        for (j=limit; j<edge[i].len+1; j++) {
+            int pos = edge[i].pos + j*edge[i].delta;
+            ledstring.channel[0].leds[pos] = 0;
+        }
+    }
+}
+
+void parabolic(int frame)
+{
+    blank();
+    int i;
+    for (i=0; i<ARRAY_SIZE(arc); i++) {
+        float t = (frame % 31)/30.0;
+        float v = 2;
+        float a = -4;
+        float pos;
+        pos = v*t + a*t*t/2;
+        if (t >= 0.5) pos = 1-pos;
+        if ((frame/31)%2) pos = 1-pos;  // alternate between forward and reverse
+        int ipos = arc[i].pos + arc[i].delta*pos*arc[i].len;
+        int color = i ? 0x00ff80 : 0xffff00;
+        ledstring.channel[0].leds[ipos] = color;
+        if (ipos >= 1) ledstring.channel[0].leds[ipos-1] = scale(color, 25);
+        if (ipos >= 2) ledstring.channel[0].leds[ipos-2] = scale(color, 10);
+        if (ipos <  LED_COUNT-1) ledstring.channel[0].leds[ipos+1] = scale(color, 25);
+        if (ipos <  LED_COUNT-2) ledstring.channel[0].leds[ipos+2] = scale(color, 10);
+    }
+}
+
+void rain(int frame)
+{
+    static int rain_colors[] = { 0x300030, 0x800080, 0x600060, 0x400048, 0x300030, 0x200120, 0x100310, 0x040404, 0 };
+    int i, j;
+    blank();
+    for (i=0; i<ARRAY_SIZE(edge); i++) {
+        for (j=0; j<edge[i].len; j++) {
+            int pos = edge[i].pos + j*edge[i].delta;
+            int color = rain_colors[(frame + j) % ARRAY_SIZE(rain_colors)];
+            ledstring.channel[0].leds[pos] = color;
+        }
+    }
+}
+
 const char *blink_colors[] = { "red", "yellow", "green", "blue", "purple", "pink" };
 void blink(int frame)
 {
-    if (frame % 2 == 0) {
-        plain_color("0");
-    }
-    else {
-        plain_color(blink_colors[(frame/2) % ARRAY_SIZE(blink_colors)]);
-    }
+	if (frame % 2 == 0) {
+		blank();
+	}
+	else {
+		plain_color(blink_colors[(frame/2) % ARRAY_SIZE(blink_colors)]);
+	}
+}
+
+void auto_sequence(int frame)
+{
+    void (*sequence[])(int) = { parabolic, rain, lightning, fire, halloween };
+    int seqpos = (frame/450) % ARRAY_SIZE(sequence);
+    sequence[seqpos](frame);
 }
 
 int main(int argc, char *argv[])
@@ -542,7 +711,9 @@ int main(int argc, char *argv[])
 
     while (running)
     {
-        if (mode && !strcmp(mode, "chase"))
+        if (mode && !strcmp(mode, "auto"))
+            auto_sequence(frame++);
+        else if (mode && !strcmp(mode, "chase"))
             chase(frame++, 12);
         else if (mode && !strcmp(mode, "fade"))
             fade(frame++);
@@ -550,6 +721,22 @@ int main(int argc, char *argv[])
             rainbow(frame++);
         else if (mode && !strcmp(mode, "blink"))
             blink(frame++);
+        else if (mode && !strcmp(mode, "random"))
+            pure_random(frame++);
+        else if (mode && !strcmp(mode, "parabolic"))
+            parabolic(frame++);
+        else if (mode && !strcmp(mode, "rain"))
+            rain(frame++);
+        else if (mode && !strcmp(mode, "lightning"))
+            lightning(frame++);
+        else if (mode && !strcmp(mode, "fireflies"))
+            fireflies(frame++);
+        else if (mode && !strcmp(mode, "halloween"))
+            halloween(frame++);
+        else if (mode && !strcmp(mode, "fire"))
+            fire(frame++);
+        else if (mode && !strcmp(mode, "scoot"))
+            scoot(frame++);
         else if (mode && !strncmp(mode, "color:", 6)) {
             plain_color(mode+6);
             running = 0;
@@ -567,9 +754,9 @@ int main(int argc, char *argv[])
     }
 
     if (clear_on_exit) {
-    matrix_clear();
-    matrix_render();
-    ws2811_render(&ledstring);
+	matrix_clear();
+	matrix_render();
+	ws2811_render(&ledstring);
     }
 
     ws2811_fini(&ledstring);
