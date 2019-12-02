@@ -620,6 +620,23 @@ void scoot(int frame)
     }
 }
 
+void interactive()
+{
+    char str[40];
+    if (!fgets(str, sizeof(str), stdin)) {
+        running = 0;
+        return;
+    }
+
+    if (*str == 'c') {
+        blank();
+    }
+    else {
+        int pos = atoi(str);
+        ledstring.channel[0].leds[pos] = 32*white;
+    }
+}
+
 static struct { int pos, delta, len; } edge[] = {
     { 4, 1, 25 },
     { 61, -1, 23 },
@@ -757,6 +774,8 @@ int main(int argc, char *argv[])
             fire(frame++);
         else if (mode && !strcmp(mode, "scoot"))
             scoot(frame++);
+        else if (mode && !strcmp(mode, "interactive"))
+            interactive();
         else if (mode && !strncmp(mode, "color:", 6)) {
             plain_color(mode+6);
             running = 0;
