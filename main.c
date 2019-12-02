@@ -838,7 +838,7 @@ void blink(int frame)
 
 void auto_sequence(int frame)
 {
-    void (*sequence[])(int) = { parabolic, ringsnow, ringfire, christmas };
+    void (*sequence[])(int) = { candycane, ringsnow, christmas, rainbow };
     int seqpos = (frame/450) % ARRAY_SIZE(sequence);
     sequence[seqpos](frame);
 }
