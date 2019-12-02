@@ -456,7 +456,8 @@ void sparkle()
 
 //int rainbow_colors[] = { red, yellow, green, blue, magenta, red };
 //int rainbow_colors[] = { cyan, white, blue, magenta, green, cyan };
-int rainbow_colors[] = { red, orange, yellow, magenta, white, red };
+//int rainbow_colors[] = { red, orange, yellow, magenta, white, red };
+int rainbow_colors[] = { red, orange, yellow, green, blue, magenta, red };
 void rainbow(int frame)
 {
     int i;
@@ -468,8 +469,8 @@ void rainbow(int frame)
         float b_pct = rpos - a;
         float a_pct = 1 - b_pct;
         ledstring.channel[0].leds[i] =
-            rainbow_colors[a] * (int)(0x80*a_pct) +
-            rainbow_colors[b] * (int)(0x80*b_pct);
+            rainbow_colors[a] * (int)(0x20*a_pct) +
+            rainbow_colors[b] * (int)(0x20*b_pct);
     }
 }
 
