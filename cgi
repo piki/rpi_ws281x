@@ -13,7 +13,7 @@ color = cgi['color']
 code = cgi['code']
 pattern = cgi['pattern']
 
-LITERAL_MODES = %w[auto parabolic snow christmas rain fire scoot halloween lightning fireflies chase fade rainbow blink]
+LITERAL_MODES = %w[auto parabolic snow christmas candycane rain fire scoot halloween lightning fireflies chase fade rainbow blink]
 OTHER_MODES = ["off", "color", "pattern", "color code"]
 REGEX = Regexp.new("^" + (LITERAL_MODES+OTHER_MODES).join('|') + "$")
 
@@ -74,7 +74,7 @@ LITERAL_MODES.each do |mode|
 	puts %Q(<input type="submit" name="mode" value="#{mode}">)
 end
 puts %Q(
-<input type="submit" name="mode" value="color"><select name="color">
+<br><input type="submit" name="mode" value="color"><select name="color">
 )
 COLORS.each { |x| puts %Q(<option value="#{x}"#{" selected" if color == x}>#{x}) }
 puts %Q(
