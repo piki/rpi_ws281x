@@ -546,6 +546,23 @@ void plain_color(const char *name)
     }
 }
 
+void pattern(const char *names)
+{
+    char *dup = strdup(names);
+    char *p;
+    unsigned long colors[20];
+    int i, ncolors=0;
+    for (p=strtok(dup, ","); p && ncolors < ARRAY_SIZE(colors); p=strtok(NULL, ",")) {
+        colors[ncolors++] = color_for_name(p);
+    }
+
+    if (ncolors == 0) colors[ncolors++] = 0;
+
+    for (i=0; i<LED_COUNT; i++) {
+        ledstring.channel[0].leds[i] = colors[i % ncolors];
+    }
+}
+
 void lightning_helper(int frame, int colors)
 {
     #define BOLT_COUNT 40
@@ -739,6 +756,10 @@ int main(int argc, char *argv[])
             scoot(frame++);
         else if (mode && !strncmp(mode, "color:", 6)) {
             plain_color(mode+6);
+            running = 0;
+        }
+        else if (mode && !strncmp(mode, "pattern:", 8)) {
+            pattern(mode+8);
             running = 0;
         }
         else

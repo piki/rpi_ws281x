@@ -11,9 +11,10 @@ mode = cgi['mode']
 rate = cgi['rate']
 color = cgi['color']
 code = cgi['code']
+pattern = cgi['pattern']
 
-LITERAL_MODES = %w[auto parabolic rain fire scoot halloween lightning fireflies chase fade rainbow blink]
-OTHER_MODES = ["off", "color", "color code"]
+LITERAL_MODES = %w[auto parabolic snow christmas rain fire scoot halloween lightning fireflies chase fade rainbow blink]
+OTHER_MODES = ["off", "color", "pattern", "color code"]
 REGEX = Regexp.new("^" + (LITERAL_MODES+OTHER_MODES).join('|') + "$")
 
 puts %Q(<html>
@@ -28,6 +29,7 @@ mode=#{mode.inspect}
 rate=#{rate.inspect}
 color=#{color.inspect}
 code=#{code.inspect}
+pattern=#{pattern.inspect}
 )
 
 # If any input, take action.
@@ -40,6 +42,8 @@ if mode =~ REGEX && rate =~ /^\d+$/ && rate.to_i >= 1 && rate.to_i <= 100
 			args = [ "-r", rate, "-m", mode ]
 		when "color"
 			args = [ "-r", rate, "-m", "color:#{color}" ] if color =~ /^\w+$/
+		when "pattern"
+			args = [ "-r", rate, "-m", "pattern:#{pattern}" ] if pattern =~ /^(\w+,)*\w+$/
 		when "color code"
 			args = [ "-r", rate, "-m", "color:#{code}" ] if code =~ /^[0-9a-fA-F]{6}$/
 	end
@@ -76,6 +80,7 @@ COLORS.each { |x| puts %Q(<option value="#{x}"#{" selected" if color == x}>#{x})
 puts %Q(
 </select><br>
 <input type="submit" name="mode" value="color code"><input name="code" type="text" value="#{code}" size=6><br>
+<input type="submit" name="mode" value="pattern"><input name="pattern" type="text" value="#{pattern}" placeholder="red,green,blue" size=20><br>
 <input type="submit" name="mode" value="off"><p>
 <input type="text" name="rate" value="#{rate}" size=3> fps<br>
 </form>
