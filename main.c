@@ -486,14 +486,30 @@ unsigned int mix(unsigned int color1, unsigned int color2, unsigned int pct)
     return scale(color1, 100-pct) + scale(color2, pct);
 }
 
-void halloween(int frame)
+void statefair(int frame, unsigned long color1, unsigned long color2, int reverse)
 {
     int i;
     for (i=0; i<LED_COUNT; i++) {
         int mframe = (LED_COUNT + frame - i) % 64;
-        int color = (mframe < 32) ? 0xff8000 : 0x00ff40;
-        ledstring.channel[0].leds[i] = scale(color, (32-mframe%32)*100/32);
+        int color = (mframe < 32) ? color1 : color2;
+        int idx = reverse ? (LED_COUNT-i-1) : i;
+        ledstring.channel[0].leds[idx] = scale(color, (32-mframe%32)*100/32);
     }
+}
+
+void halloween(int frame)
+{
+    statefair(frame, 0xff8000, 0x00ff40, 0);
+}
+
+void christmas(int frame)
+{
+    statefair(frame, 0x00ff00, 0x0000ff, 1);
+}
+
+void candycane(int frame)
+{
+    statefair(frame, 0x008000, 0x88ffff, 1);
 }
 
 void pure_random(int frame)
@@ -528,7 +544,7 @@ void blank()
         ledstring.channel[0].leds[i] = 0;
 }
 
-void plain_color(const char *name)
+unsigned long color_for_name(const char *name)
 {
     unsigned int i;
     unsigned long color = 0;
@@ -544,6 +560,13 @@ void plain_color(const char *name)
         ((color & 0x0000FF00) >> 8) +
         ((color & 0x000000FF) << 16);
 
+    return color;
+}
+
+void plain_color(const char *name)
+{
+    unsigned long color = color_for_name(name);
+    int i;
     for (i=0; i<LED_COUNT; i++) {
         ledstring.channel[0].leds[i] = color;
     }
@@ -612,7 +635,7 @@ void scoot(int frame)
 
     for (i=0; i<SCOOT_COUNT; i++) {
         if (bolts[i] < 0 || bolts[i] >= LED_COUNT) continue;
-        int color = (i % 2) ? 0xff8000 : 0x00ff40;
+        int color = (i % 2) ? 0x00ff00 : 0x0000ff;
         ledstring.channel[0].leds[bolts[i]] = color;
         int delta = 1;//(rand() % 5) - 1;
         if (i % 2 == 0) delta = -delta;
@@ -638,10 +661,16 @@ void interactive()
 }
 
 static struct { int pos, delta, len; } edge[] = {
+// window edges
+#if 0
     { 4, 1, 25 },
     { 61, -1, 23 },
     { 105, 1, 25 },
     { 164, -1, 24 }
+#endif
+
+// tree is all one edge
+    { 0, 1, LED_COUNT-1 },
 };
 
 static struct { int pos, delta, len; } arc[] = {
@@ -685,7 +714,7 @@ void parabolic(int frame)
         if (t >= 0.5) pos = 1-pos;
         if ((frame/31)%2) pos = 1-pos;  // alternate between forward and reverse
         int ipos = arc[i].pos + arc[i].delta*pos*arc[i].len;
-        int color = i ? 0x00ff80 : 0xffff00;
+        int color = (i ^ ((frame/31) & 1)) ? 0x00ff00 : 0x0000ff;
         ledstring.channel[0].leds[ipos] = color;
         if (ipos >= 1) ledstring.channel[0].leds[ipos-1] = scale(color, 25);
         if (ipos >= 2) ledstring.channel[0].leds[ipos-2] = scale(color, 10);
@@ -697,6 +726,21 @@ void parabolic(int frame)
 void rain(int frame)
 {
     static int rain_colors[] = { 0x300030, 0x800080, 0x600060, 0x400048, 0x300030, 0x200120, 0x100310, 0x040404, 0 };
+    int i, j;
+    blank();
+    for (i=0; i<ARRAY_SIZE(edge); i++) {
+        for (j=0; j<edge[i].len; j++) {
+            int pos = edge[i].pos + j*edge[i].delta;
+            int color = rain_colors[(frame + j) % ARRAY_SIZE(rain_colors)];
+            ledstring.channel[0].leds[pos] = color;
+        }
+    }
+}
+
+void snow(int frame)
+{
+    frame /= 4;
+    static int rain_colors[] = { 0x040404, 0x808080, 0x040404, 0x040404, 0x040404, 0x202020, 0x040404, 0x040404, 0 };
     int i, j;
     blank();
     for (i=0; i<ARRAY_SIZE(edge); i++) {
@@ -721,7 +765,7 @@ void blink(int frame)
 
 void auto_sequence(int frame)
 {
-    void (*sequence[])(int) = { parabolic, rain, lightning, fire, halloween };
+    void (*sequence[])(int) = { parabolic, snow, fire, christmas };
     int seqpos = (frame/450) % ARRAY_SIZE(sequence);
     sequence[seqpos](frame);
 }
@@ -763,6 +807,8 @@ int main(int argc, char *argv[])
             pure_random(frame++);
         else if (mode && !strcmp(mode, "parabolic"))
             parabolic(frame++);
+        else if (mode && !strcmp(mode, "snow"))
+            snow(frame++);
         else if (mode && !strcmp(mode, "rain"))
             rain(frame++);
         else if (mode && !strcmp(mode, "lightning"))
@@ -771,6 +817,10 @@ int main(int argc, char *argv[])
             fireflies(frame++);
         else if (mode && !strcmp(mode, "halloween"))
             halloween(frame++);
+        else if (mode && !strcmp(mode, "christmas"))
+            christmas(frame++);
+        else if (mode && !strcmp(mode, "candycane"))
+            candycane(frame++);
         else if (mode && !strcmp(mode, "fire"))
             fire(frame++);
         else if (mode && !strcmp(mode, "scoot"))
