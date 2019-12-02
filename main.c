@@ -682,22 +682,26 @@ void fire(int frame)
 {
     int i, j;
     static int frac = 80;
-    blank();
     for (i=0; i<ARRAY_SIZE(edge); i++) {
         int limit = edge[i].len * frac / 100;
-        //frac += (rand() % 21) - 5 - frac/10;
-        frac += (rand() % 41) - 10 - frac/5;
-        if (frac < 0) frac = 0;
-        if (frac > 100) frac = 100;
+
+        // paint fire colors
         for (j=0; j<limit; j++) {
             int pos = edge[i].pos + j*edge[i].delta;
             int color = mix(25*red, 25*orange, 100*j/limit);
             ledstring.channel[0].leds[pos] = color;
         }
+
+        // paint the rest black
         for (j=limit; j<edge[i].len+1; j++) {
             int pos = edge[i].pos + j*edge[i].delta;
             ledstring.channel[0].leds[pos] = 0;
         }
+
+        // update for next time
+        frac += (rand() % 41) - 10 - frac/5;
+        if (frac < 0) frac = 0;
+        if (frac > 100) frac = 100;
     }
 }
 
