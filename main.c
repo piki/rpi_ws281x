@@ -656,7 +656,8 @@ void fire(int frame)
     blank();
     for (i=0; i<ARRAY_SIZE(edge); i++) {
         int limit = edge[i].len * frac / 100;
-        frac += (rand() % 21) - 5 - frac/10;
+        //frac += (rand() % 21) - 5 - frac/10;
+        frac += (rand() % 41) - 10 - frac/5;
         if (frac < 0) frac = 0;
         if (frac > 100) frac = 100;
         for (j=0; j<limit; j++) {
