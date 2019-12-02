@@ -782,6 +782,49 @@ void snow(int frame)
     precip(frame/4, snow_colors, ARRAY_SIZE(snow_colors));
 }
 
+void ringprecip(int *arr, int arrsize)
+{
+    static struct { int frac, ofs; } drops[4];
+    static int init = 0;
+    int i, j;
+
+    if (!init) {
+        init = 1;
+        for (i=0; i<ARRAY_SIZE(drops); i++) {
+            drops[i].frac = rand() % 100;
+            drops[i].ofs = rand() % ARRAY_SIZE(rings);
+        }
+    }
+
+    blank();
+    for (i=0; i<ARRAY_SIZE(drops); i++) {
+        for (j=0; j<ARRAY_SIZE(rings)-1; j++) {
+            int pos = (rings[j+1]-rings[j])*drops[i].frac/100 + rings[j];
+            int coloridx = ARRAY_SIZE(rings)-1-j - drops[i].ofs;
+            if (coloridx >= 0 && coloridx < arrsize) {
+                ledstring.channel[0].leds[pos] = arr[coloridx];
+            }
+        }
+        if (++drops[i].ofs == ARRAY_SIZE(rings)) {
+            drops[i].frac = rand() % 100;
+            drops[i].ofs = rand() % 3;
+        }
+    }
+}
+
+void ringrain(int frame)
+{
+    static int rain_colors[] = { 0x800080, 0x400048, 0x200120, 0x040404, 0 };
+    ringprecip(rain_colors, ARRAY_SIZE(rain_colors));
+}
+
+void ringsnow(int frame)
+{
+    if (frame % 4) return;
+    static int snow_colors[] = { 0x808080, 0 };
+    ringprecip(snow_colors, ARRAY_SIZE(snow_colors));
+}
+
 const char *blink_colors[] = { "red", "yellow", "green", "blue", "purple", "pink" };
 void blink(int frame)
 {
@@ -795,7 +838,7 @@ void blink(int frame)
 
 void auto_sequence(int frame)
 {
-    void (*sequence[])(int) = { parabolic, snow, fire, christmas };
+    void (*sequence[])(int) = { parabolic, ringsnow, ringfire, christmas };
     int seqpos = (frame/450) % ARRAY_SIZE(sequence);
     sequence[seqpos](frame);
 }
@@ -838,9 +881,9 @@ int main(int argc, char *argv[])
         else if (mode && !strcmp(mode, "parabolic"))
             parabolic(frame++);
         else if (mode && !strcmp(mode, "snow"))
-            snow(frame++);
+            ringsnow(frame++);
         else if (mode && !strcmp(mode, "rain"))
-            rain(frame++);
+            ringrain(frame++);
         else if (mode && !strcmp(mode, "lightning"))
             lightning(frame++);
         else if (mode && !strcmp(mode, "fireflies"))
