@@ -673,6 +673,10 @@ static struct { int pos, delta, len; } edge[] = {
     { 0, 1, LED_COUNT-1 },
 };
 
+static int rings[] = {
+    8, 42, 70, 97, 116, 135, 151, 168, 177, 185, 190, 196, 199, LED_COUNT
+};
+
 static struct { int pos, delta, len; } arc[] = {
     { 4, 1, 58 },
     { 164, -1, 60 }
@@ -703,6 +707,31 @@ void fire(int frame)
         if (frac < 0) frac = 0;
         if (frac > 100) frac = 100;
     }
+}
+
+void ringfire(int frame)
+{
+    int i, j;
+    static int frac = 80;
+
+    int limit = (ARRAY_SIZE(rings)-1) * frac / 100;
+    // paint the fire colors
+    for (i=0; i<limit; i++) {
+        int color = mix(25*red, 25*orange, 100*i/limit);
+        for (j=rings[i]; j<rings[i+1]; j++) {
+            ledstring.channel[0].leds[j] = color;
+        }
+    }
+
+    // paint the rest black
+    for (j=rings[limit]; j<LED_COUNT; j++) {
+        ledstring.channel[0].leds[j] = 0;
+    }
+
+    // update for next time
+    frac += (rand() % 41) - 10 - frac/5;
+    if (frac < 0) frac = 0;
+    if (frac > 100) frac = 100;
 }
 
 void parabolic(int frame)
@@ -826,7 +855,7 @@ int main(int argc, char *argv[])
         else if (mode && !strcmp(mode, "candycane"))
             candycane(frame++);
         else if (mode && !strcmp(mode, "fire"))
-            fire(frame++);
+            ringfire(frame++);
         else if (mode && !strcmp(mode, "scoot"))
             scoot(frame++);
         else if (mode && !strcmp(mode, "interactive"))
