@@ -756,33 +756,30 @@ void parabolic(int frame)
     }
 }
 
-void rain(int frame)
+void precip(int frame, int *arr, int arrsize)
 {
-    static int rain_colors[] = { 0x300030, 0x800080, 0x600060, 0x400048, 0x300030, 0x200120, 0x100310, 0x040404, 0 };
     int i, j;
     blank();
     for (i=0; i<ARRAY_SIZE(edge); i++) {
         for (j=0; j<edge[i].len; j++) {
             int pos = edge[i].pos + j*edge[i].delta;
-            int color = rain_colors[(frame + j) % ARRAY_SIZE(rain_colors)];
+            int color = arr[(frame + j) % arrsize];
             ledstring.channel[0].leds[pos] = color;
         }
     }
 }
 
+void rain(int frame)
+{
+    static int rain_colors[] = { 0x300030, 0x800080, 0x600060, 0x400048, 0x300030, 0x200120, 0x100310, 0x040404, 0 };
+    precip(frame, rain_colors, ARRAY_SIZE(rain_colors));
+}
+
 void snow(int frame)
 {
     frame /= 4;
-    static int rain_colors[] = { 0x040404, 0x808080, 0x040404, 0x040404, 0x040404, 0x202020, 0x040404, 0x040404, 0 };
-    int i, j;
-    blank();
-    for (i=0; i<ARRAY_SIZE(edge); i++) {
-        for (j=0; j<edge[i].len; j++) {
-            int pos = edge[i].pos + j*edge[i].delta;
-            int color = rain_colors[(frame + j) % ARRAY_SIZE(rain_colors)];
-            ledstring.channel[0].leds[pos] = color;
-        }
-    }
+    static int snow_colors[] = { 0x040404, 0x808080, 0x040404, 0x040404, 0x040404, 0x202020, 0x040404, 0x040404, 0 };
+    precip(frame/4, snow_colors, ARRAY_SIZE(snow_colors));
 }
 
 const char *blink_colors[] = { "red", "yellow", "green", "blue", "purple", "pink" };
