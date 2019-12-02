@@ -1,4 +1,4 @@
-CFLAGS = -Wall
+CFLAGS = -Wall -g
 OBJS = dma.o mailbox.o main.o pcm.o pwm.o rpihw.o ws2811.o
 
 all: leds
