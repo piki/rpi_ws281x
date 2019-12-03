@@ -55,7 +55,7 @@ if mode =~ REGEX && rate =~ /^\d+$/ && rate.to_i >= 1 && rate.to_i <= 100
 			$stdout.close_on_exec = true
 			$stderr.close_on_exec = true
 			Process.setsid
-			exec("/usr/local/bin/leds", "leds", *args)
+			exec("/usr/local/bin/leds", *args)
 			exit 1
 		else
 			Process.detach(pid)
