@@ -65,8 +65,16 @@ else
 	rate = "30"
 end
 
+puts "-->"
+
+running_processes = `ps -eo args`.lines.grep(%r{(?<!cgi-bin)/leds})
+if running_processes.any?
+	puts "Running:<br>\n<pre>\n" + running_processes.join + "</pre>";
+else
+	puts "Nothing running<br>";
+end
+
 puts %Q(
--->
 <form method="post">
 )
 LITERAL_MODES.each do |mode|
