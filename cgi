@@ -50,7 +50,6 @@ if mode =~ REGEX && rate =~ /^\d+$/ && rate.to_i >= 1 && rate.to_i <= 100
 	
 	puts "do ittttt: #{args.inspect}"
 	if args
-		system "pkill -f /usr/local/bin/leds"
 		pid = Process.fork
 		if pid.nil?
 			$stdout.close_on_exec = true
