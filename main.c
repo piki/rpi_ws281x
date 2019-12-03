@@ -30,6 +30,8 @@
 
 static char VERSION[] = "XX.YY.ZZ";
 
+#include <ctype.h>
+#include <dirent.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -843,6 +845,38 @@ void auto_sequence(int frame)
     sequence[seqpos](frame);
 }
 
+// Kill any process with "/leds" but not "cgi-bin/leds"
+static void kill_previous()
+{
+    DIR *d = opendir("/proc");
+    struct dirent *de;
+    for (de=readdir(d); de; de=readdir(d)) {
+        int pid = atoi(de->d_name);
+        if (pid < 1) continue;                                // not a process subdirector
+        if (pid == getpid()) continue;                        // do not kill ourselves
+        
+        char fn[PATH_MAX];
+        snprintf(fn, sizeof(fn), "/proc/%s/cmdline", de->d_name);
+        FILE *fp = fopen(fn, "r");
+        if (!fp) continue;                                    // could not open cmdline file
+        
+        char buf[4096];
+        size_t len = fread(buf, 1, sizeof(buf)-1, fp);
+        fclose(fp);
+        if (len <= 0) continue;                               // read error
+        
+        buf[len] = '\0';
+        const char *p = strstr(buf, "/leds");
+        if (!p) continue;                                     // does not contain /leds
+        if (p-buf >= 7 && !strcmp(p-7, "cgi-bin")) continue;  // ignore cgi-bin/leds
+        
+        int result = kill(pid, SIGKILL);
+        if (result == -1) {
+            perror("kill");
+        }
+    }
+}
+
 int main(int argc, char *argv[])
 {
     ws2811_return_t ret;
@@ -852,6 +886,8 @@ int main(int argc, char *argv[])
     parseargs(argc, argv, &ledstring);
 
     matrix = malloc(sizeof(ws2811_led_t) * width * height);
+
+    kill_previous();
 
     setup_handlers();
 
