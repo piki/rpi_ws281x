@@ -921,9 +921,9 @@ int main(int argc, char *argv[])
     }
 
     if (clear_on_exit) {
-    matrix_clear();
-    matrix_render();
-    ws2811_render(&ledstring);
+        matrix_clear();
+        matrix_render();
+        ws2811_render(&ledstring);
     }
 
     ws2811_fini(&ledstring);
