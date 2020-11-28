@@ -511,7 +511,7 @@ void christmas(int frame)
 
 void candycane(int frame)
 {
-    statefair(frame, 0x008000, 0x88ffff, 1);
+    statefair(frame, 0x006000, 0x66cccc, 1);
 }
 
 void pure_random(int frame)
@@ -676,7 +676,8 @@ static struct { int pos, delta, len; } edge[] = {
 };
 
 static int rings[] = {
-    8, 42, 70, 97, 116, 135, 151, 168, 177, 185, 190, 196, 199, LED_COUNT
+    8, 42, 70, 97, 116, 135, 151, 168, 177, 185, 190, 196, 199, LED_COUNT            // with 200
+    // 14, 58, 92, 120, 147, 166, 185, 201, 218, 227, 235, 240, 246, 249, LED_COUNT  // with 250
 };
 
 static struct { int pos, delta, len; } arc[] = {
@@ -784,6 +785,25 @@ void snow(int frame)
     precip(frame/4, snow_colors, ARRAY_SIZE(snow_colors));
 }
 
+void sweep(int frame)
+{
+    int pos = frame % 50;
+    int i, j;
+    blank();
+    for (i=0; i<ARRAY_SIZE(rings)-1; i++) {
+        for (j=0; j<3; j++) {
+            float f = (rings[i+1]-rings[i])*(pos/150.0 + j/3.0) + rings[i];
+            int floor = (int)f;
+            float frac = f - floor;
+            unsigned long color1 = (int)(0x7f * (1-frac));
+            unsigned long color2 = (int)(0x7f * frac);
+            unsigned long color_base = rainbow_colors[i % ARRAY_SIZE(rainbow_colors)];
+            ledstring.channel[0].leds[floor] = color1 * color_base;
+            ledstring.channel[0].leds[floor+1] = color2 * color_base;
+        }
+    }
+}
+
 void ringprecip(int *arr, int arrsize)
 {
     static struct { int frac, ofs; } drops[4];
@@ -840,7 +860,7 @@ void blink(int frame)
 
 void auto_sequence(int frame)
 {
-    void (*sequence[])(int) = { candycane, ringsnow, christmas, rainbow };
+    void (*sequence[])(int) = { candycane, ringsnow, sweep, christmas, rainbow };
     int seqpos = (frame/450) % ARRAY_SIZE(sequence);
     sequence[seqpos](frame);
 }
@@ -916,6 +936,8 @@ int main(int argc, char *argv[])
             pure_random(frame++);
         else if (mode && !strcmp(mode, "parabolic"))
             parabolic(frame++);
+        else if (mode && !strcmp(mode, "sweep"))
+            sweep(frame++);
         else if (mode && !strcmp(mode, "snow"))
             ringsnow(frame++);
         else if (mode && !strcmp(mode, "rain"))
